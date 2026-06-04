@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<title>Dansk Skatteberegner 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; padding: 24px; color: #1a2332; }
+  h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 0.85rem; color: #6b7a90; margin-bottom: 20px; }
+
+  .inputs-card { background: white; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 16px; }
+  .input-row { display: flex; align-items: center; gap: 16px; }
+  .input-row label { font-weight: 600; white-space: nowrap; min-width: 220px; font-size: 0.9rem; }
+  .input-row input[type=range] { flex: 1; accent-color: #3b6ef5; }
+  .input-row .val { font-size: 1rem; font-weight: 700; color: #3b6ef5; min-width: 150px; text-align: right; }
+  .person-toggle { display: flex; gap: 8px; }
+  .person-btn { padding: 7px 18px; border-radius: 8px; border: 2px solid #e5e9f0; background: white; font-weight: 600; font-size: 0.88rem; cursor: pointer; color: #6b7a90; transition: all 0.15s; }
+  .person-btn.active { background: #3b6ef5; color: white; border-color: #3b6ef5; }
+  select { padding: 7px 12px; border-radius: 8px; border: 2px solid #e5e9f0; font-size: 0.88rem; font-weight: 600; color: #1a2332; background: white; cursor: pointer; flex: 1; max-width: 300px; }
+  select:focus { outline: none; border-color: #3b6ef5; }
+
+  .diff-banner { background: white; border-radius: 12px; padding: 16px 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .diff-lbl { font-size: 0.8rem; color: #6b7a90; font-weight: 600; margin-bottom: 2px; }
+  .diff-val { font-size: 1.4rem; font-weight: 800; }
+  .diff-val.save { color: #10b981; }
+  .diff-val.pay { color: #ef4444; }
+  .diff-note { font-size: 0.78rem; color: #9aa; }
+  .diff-sep { width: 1px; height: 44px; background: #e5e9f0; flex-shrink: 0; }
+
+  .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .columns { grid-template-columns: 1fr; } }
+  .col-panel { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border-top: 4px solid #ccc; }
+  .col-panel.current { border-top-color: #3b6ef5; }
+  .col-panel.new-gov { border-top-color: #10b981; }
+  .col-panel h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 3px; }
+  .col-panel .col-sub { font-size: 0.75rem; color: #6b7a90; margin-bottom: 16px; line-height: 1.5; }
+
+  .mini-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid #f0f4f8; font-size: 0.84rem; gap: 8px; }
+  .mini-row:last-child { border-bottom: none; }
+  .mini-row .lbl { color: #444; flex: 1; }
+  .mini-row .val { font-weight: 600; text-align: right; white-space: nowrap; }
+  .mini-row .val.red { color: #ef4444; }
+  .mini-row .val.green { color: #10b981; }
+  .mini-row .val.purple { color: #7c3aed; }
+  .mini-row.inactive .lbl, .mini-row.inactive .val { color: #ccc; }
+  .mini-row.total { font-weight: 700; font-size: 0.92rem; border-top: 2px solid #e5e9f0; margin-top: 4px; padding-top: 10px; }
+
+  .tag { display: inline-block; font-size: 0.68rem; padding: 1px 6px; border-radius: 20px; font-weight: 700; margin-left: 5px; vertical-align: middle; }
+  .tag.fjernet { background: #fef3c7; color: #b45309; }
+
+  .rente-panel { background: white; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 20px; border-top: 4px solid #7c3aed; }
+  .rente-panel h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 14px; }
+  .rente-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .rente-cols { grid-template-columns: 1fr; } }
+  .rente-box { border-radius: 8px; padding: 14px 16px; font-size: 0.85rem; }
+  .rente-box.cur { background: #eff6ff; border: 1px solid #bfdbfe; }
+  .rente-box.nw  { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .rente-box h3 { font-size: 0.82rem; font-weight: 700; margin-bottom: 10px; color: #555; }
+  .rente-line { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.83rem; }
+  .rente-line:last-child { border-bottom: none; }
+  .rente-line .rl { color: #555; }
+  .rente-line .rv { font-weight: 600; }
+  .rv.green { color: #10b981; } .rv.red { color: #ef4444; } .rv.purple { color: #7c3aed; } .rv.orange { color: #d97706; }
+  .warn-box { margin-top: 12px; padding: 10px 14px; background: #fef3c7; border-radius: 8px; font-size: 0.8rem; color: #92400e; border: 1px solid #fde68a; }
+
+  .bar-section { background: white; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .bar-section h2 { font-size: 0.9rem; font-weight: 700; margin-bottom: 16px; }
+  .bar-row { margin-bottom: 12px; }
+  .bar-row-label { font-size: 0.8rem; font-weight: 600; color: #6b7a90; margin-bottom: 5px; }
+  .bar-outer { width: 100%; height: 32px; border-radius: 6px; overflow: hidden; display: flex; }
+  .seg { height: 100%; transition: width 0.3s; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.78rem; margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<h1>🇩🇰 Dansk Skatteberegner 2026</h1>
+<p class="subtitle">Sammenligning: Gældende regler vs. nyt regeringsgrundlag — inkl. kommuneskat og rentefradrag</p>
+
+<div class="inputs-card">
+  <div class="input-row">
+    <label>Månedsløn (brutto)</label>
+    <input type="range" id="salary" min="17000" max="250000" step="1000" value="75000">
+    <div class="val" id="salaryVal">75.000 kr./md</div>
+  </div>
+  <div class="input-row">
+    <label>Renteudgifter (pr. måned)</label>
+    <input type="range" id="rente" min="0" max="42000" step="500" value="6500">
+    <div class="val" id="renteVal">6.500 kr./md</div>
+  </div>
+  <div class="input-row">
+    <label>Kommune</label>
+    <select id="kommune" onchange="render()"></select>
+    <div class="val" id="kommuneVal" style="color:#6b7a90;font-size:0.85rem"></div>
+  </div>
+  <div class="input-row">
+    <label>Antal personer (renteloft)</label>
+    <div class="person-toggle">
+      <button class="person-btn active" data-v="1" onclick="setPerson(1)">1 person</button>
+      <button class="person-btn" data-v="2" onclick="setPerson(2)">2 personer</button>
+    </div>
+    <div class="val" id="loftVal" style="color:#7c3aed;font-size:0.85rem"></div>
+  </div>
+</div>
+
+<div class="diff-banner" id="diffBanner"></div>
+
+<div class="columns">
+  <div class="col-panel current">
+    <h2>📋 Gældende regler (2026)</h2>
+    <p class="col-sub" id="subCur"></p>
+    <div id="colCurrent"></div>
+  </div>
+  <div class="col-panel new-gov">
+    <h2>🆕 Nyt regeringsgrundlag</h2>
+    <p class="col-sub" id="subNew"></p>
+    <div id="colNew"></div>
+  </div>
+</div>
+
+<div class="rente-panel">
+  <h2>🏦 Rentefradrag — separat oversigt</h2>
+  <div class="rente-cols">
+    <div class="rente-box cur">
+      <h3>📋 Gældende regler — ingen loft</h3>
+      <div id="renteCur"></div>
+    </div>
+    <div class="rente-box nw">
+      <h3>🆕 Nyt regeringsgrundlag — loft <span id="loftTxt"></span></h3>
+      <div id="renteNew"></div>
+    </div>
+  </div>
+  <div id="renteWarn"></div>
+</div>
+
+<div class="bar-section">
+  <h2>Fordeling af bruttolønnen (ekskl. rentefradrag)</h2>
+  <div class="bar-row"><div class="bar-row-label">Gældende regler</div><div class="bar-outer" id="barCurrent"></div></div>
+  <div class="bar-row"><div class="bar-row-label">Nyt regeringsgrundlag</div><div class="bar-outer" id="barNew"></div></div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Udbetalt netto</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>AM-bidrag 8%</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Bundskat 12,01%</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#64748b"></div>Kommuneskat</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>Mellemskat 7,5%</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Topskat 15%</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#7f1d1d"></div>Top-topskat 5%</div>
+  </div>
+</div>
+
+<script>
+// Faste satser
+const AM=0.08, BUND=0.1201, MELLEM=0.075, TOP=0.15, TOPTOP=0.05;
+const PFRADRAG=54100;
+// Gældende 2026 grænser (efter AM)
+const G_MELLEM=641200, G_TOP=777900, G_TOPTOP=2592700;
+// Nyt regeringsgrundlag: ingen mellemskat, topskat starter ved 777.900 (samme grænse)
+const NG_TOP=777900, NG_TOPTOP=2592700;
+// Renteloft
+const RENTE_LOFT=150000;
+
+// Alle 98 kommuner med kommuneskat 2026 (ekskl. kirkeskat)
+const KOMMUNER = [
+  {n:"Albertslund",k:24.6},{n:"Allerød",k:24.0},{n:"Assens",k:25.6},
+  {n:"Ballerup",k:25.4},{n:"Billund",k:25.1},{n:"Bornholm",k:26.1},
+  {n:"Brøndby",k:25.7},{n:"Brønderslev",k:26.3},{n:"Dragør",k:23.8},
+  {n:"Egedal",k:24.7},{n:"Esbjerg",k:25.5},{n:"Faaborg-Midtfyn",k:25.4},
+  {n:"Fanø",k:25.3},{n:"Favrskov",k:24.7},{n:"Faxe",k:25.6},
+  {n:"Fredensborg",k:24.9},{n:"Fredericia",k:25.4},{n:"Frederiksberg",k:23.9},
+  {n:"Frederikshavn",k:26.0},{n:"Frederikssund",k:25.7},{n:"Furesø",k:24.0},
+  {n:"Gentofte",k:23.6},{n:"Gladsaxe",k:24.7},{n:"Glostrup",k:24.2},
+  {n:"Greve",k:24.0},{n:"Gribskov",k:25.4},{n:"Guldborgsund",k:26.2},
+  {n:"Haderslev",k:25.4},{n:"Halsnæs",k:26.1},{n:"Hedensted",k:24.9},
+  {n:"Helsingør",k:25.2},{n:"Herlev",k:24.8},{n:"Herning",k:24.9},
+  {n:"Hillerød",k:24.8},{n:"Hjørring",k:26.1},{n:"Holbæk",k:25.9},
+  {n:"Holstebro",k:24.9},{n:"Horsens",k:24.8},{n:"Hvidovre",k:25.3},
+  {n:"Høje-Taastrup",k:24.8},{n:"Hørsholm",k:23.6},{n:"Ikast-Brande",k:25.4},
+  {n:"Ishøj",k:25.3},{n:"Jammerbugt",k:26.0},{n:"Kalundborg",k:25.7},
+  {n:"Kerteminde",k:25.4},{n:"Kolding",k:24.4},{n:"København",k:23.4},
+  {n:"Køge",k:25.0},{n:"Langeland",k:26.3},{n:"Lejre",k:25.3},
+  {n:"Lemvig",k:25.6},{n:"Lolland",k:26.3},{n:"Lyngby-Taarbæk",k:23.7},
+  {n:"Læsø",k:26.3},{n:"Mariagerfjord",k:26.0},{n:"Middelfart",k:25.2},
+  {n:"Morsø",k:25.9},{n:"Norddjurs",k:26.2},{n:"Nordfyns",k:25.8},
+  {n:"Nyborg",k:25.8},{n:"Næstved",k:25.7},{n:"Odder",k:24.8},
+  {n:"Odense",k:25.4},{n:"Odsherred",k:26.3},{n:"Randers",k:25.7},
+  {n:"Rebild",k:25.6},{n:"Ringkøbing-Skjern",k:24.5},{n:"Ringsted",k:25.6},
+  {n:"Roskilde",k:24.3},{n:"Rudersdal",k:23.5},{n:"Rødovre",k:24.9},
+  {n:"Samsø",k:26.1},{n:"Silkeborg",k:24.7},{n:"Skanderborg",k:24.4},
+  {n:"Skive",k:25.8},{n:"Slagelse",k:26.1},{n:"Solrød",k:24.4},
+  {n:"Sorø",k:26.3},{n:"Stevns",k:25.6},{n:"Struer",k:25.8},
+  {n:"Svendborg",k:26.3},{n:"Syddjurs",k:25.3},{n:"Sønderborg",k:25.2},
+  {n:"Thisted",k:25.9},{n:"Tårnby",k:24.3},{n:"Tønder",k:25.9},
+  {n:"Vallensbæk",k:24.0},{n:"Varde",k:25.4},{n:"Vejen",k:25.4},
+  {n:"Vejle",k:23.4},{n:"Vesthimmerland",k:26.1},{n:"Viborg",k:25.1},
+  {n:"Vordingborg",k:26.3},{n:"Ærø",k:26.2},{n:"Aabenraa",k:25.4},
+  {n:"Aalborg",k:25.4},{n:"Aarhus",k:24.8}
+];
+
+// Byg dropdown
+const sel = document.getElementById('kommune');
+KOMMUNER.forEach((k,i) => {
+  const o = document.createElement('option');
+  o.value = i;
+  o.textContent = k.n;
+  // Sæt Aarhus som default
+  if(k.n === 'Aarhus') o.selected = true;
+  sel.appendChild(o);
+});
+
+let personer = 1;
+
+function getKommune() {
+  return KOMMUNER[parseInt(sel.value)];
+}
+
+function fmt(n){ return Math.round(n).toLocaleString('da-DK')+' kr.'; }
+function fmtDiff(n){ const s=Math.round(n); return (s>=0?'+':'')+s.toLocaleString('da-DK')+' kr.'; }
+function pct(n,t){ return (n/t*100).toFixed(1)+'%'; }
+
+function setPerson(v){
+  personer=v;
+  document.querySelectorAll('.person-btn').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.v)===v));
+  render();
+}
+
+// --- BEREGNINGER ---
+
+// Gældende 2026:
+// Mellemskat: 7,5% af al indkomst over 641.200 op til 2.592.700 efter AM
+// Top-topskat: 5% af (> 2.592.700) efter AM
+// Der er INGEN separat 15% topskat i gældende regler
+function calcCurrent(brutto, kSat) {
+  const am = brutto * AM;
+  const pi = brutto - am;
+  const grundlag = Math.max(0, pi - PFRADRAG);
+  const bund = grundlag * BUND;
+  const kommune = grundlag * kSat;
+  const mG = pi > G_MELLEM ? Math.min(pi, G_TOPTOP) - G_MELLEM : 0;
+  const ttG= pi > G_TOPTOP ? pi - G_TOPTOP : 0;
+  const m = mG * MELLEM;
+  const tt= ttG * TOPTOP;
+  const total = am + bund + kommune + m + tt;
+  return {brutto, am, pi, grundlag, bund, kommune, kSat, mG, m, ttG, tt, total, netto: brutto - total};
+}
+
+// Nyt regeringsgrundlag:
+// Ingen mellemskat
+// Topskat: 15% af (777.900 – 2.592.700) efter AM
+// Top-topskat: 5% af (> 2.592.700) efter AM
+function calcNew(brutto, kSat) {
+  const am = brutto * AM;
+  const pi = brutto - am;
+  const grundlag = Math.max(0, pi - PFRADRAG);
+  const bund = grundlag * BUND;
+  const kommune = grundlag * kSat;
+  const tG = pi > NG_TOP    ? Math.min(pi, NG_TOPTOP) - NG_TOP  : 0;
+  const ttG= pi > NG_TOPTOP ? pi - NG_TOPTOP : 0;
+  const t = tG * TOP;
+  const tt= ttG * TOPTOP;
+  const total = am + bund + kommune + t + tt;
+  return {brutto, am, pi, grundlag, bund, kommune, kSat, tG, t, ttG, tt, total, netto: brutto - total};
+}
+
+// Rentefradrag — separat info, påvirker IKKE lønberegning
+// Skatteværdi = kommuneskat (ligningsmæssigt fradrag)
+function calcRente(renteAar, kSat, harLoft) {
+  const sv = kSat; // skatteværdi = kommuneskatteprocenten
+  const loft = harLoft ? RENTE_LOFT * personer : Infinity;
+  const fratrukket = Math.min(renteAar, loft);
+  const afskaret = Math.max(0, renteAar - loft);
+  const besparelse = fratrukket * sv;
+  const tabt = afskaret * sv;
+  return {renteAar, fratrukket, afskaret, besparelse, tabt, sv};
+}
+
+// --- RENDER KOLONNER ---
+function renderCol(r, isNew, cid, rc) {
+  const nettoMedRente = r.netto + rc.besparelse;
+  const rows = isNew ? [
+    {l:'AM-bidrag (8%)', v:r.am, cls:'red'},
+    {l:'Bundskat (12,01%)', v:r.bund, cls:'red'},
+    {l:`Kommuneskat (${(r.kSat*100).toFixed(2)}%)`, v:r.kommune, cls:'red'},
+    {l:'Mellemskat 7,5% <span class="tag fjernet">Fjernet</span>', v:0, cls:'', inactive:true},
+    {l:'Topskat 15% (fra 777.900 kr.)', v:r.t, cls:r.tG>0?'red':'', inactive:r.tG===0},
+    {l:'Top-topskat 5% (fra 2.592.700 kr.)', v:r.tt, cls:r.ttG>0?'red':'', inactive:r.ttG===0},
+  ] : [
+    {l:'AM-bidrag (8%)', v:r.am, cls:'red'},
+    {l:'Bundskat (12,01%)', v:r.bund, cls:'red'},
+    {l:`Kommuneskat (${(r.kSat*100).toFixed(2)}%)`, v:r.kommune, cls:'red'},
+    {l:'Mellemskat 7,5% (fra 641.200 kr.)', v:r.m, cls:r.mG>0?'red':'', inactive:r.mG===0},
+    {l:'Top-topskat 5% (fra 2.592.700 kr.)', v:r.tt, cls:r.ttG>0?'red':'', inactive:r.ttG===0},
+  ];
+
+  const renteRad = rc.besparelse > 0
+    ? `<div class="mini-row">
+        <span class="lbl">+ Rentefradrag (~${(rc.sv*100).toFixed(1)}%${rc.afskaret>0?' — loft':''})</span>
+        <span class="val purple">+${fmt(rc.besparelse)}</span>
+       </div>` : '';
+
+  document.getElementById(cid).innerHTML =
+    rows.map(row => `<div class="mini-row${row.inactive?' inactive':''}">
+      <span class="lbl">${row.l}</span>
+      <span class="val ${row.cls||''}">${row.inactive ? '—' : fmt(row.v)}</span>
+    </div>`).join('') +
+    `<div class="mini-row total"><span class="lbl">Samlet skat</span>
+      <span class="val red">${fmt(r.total)} <span style="font-weight:400;font-size:0.78rem">(${pct(r.total,r.brutto)})</span></span></div>
+    <div class="mini-row total"><span class="lbl">💰 Netto (løn)</span>
+      <span class="val green">${fmt(r.netto)}<br><span style="font-size:0.75rem;color:#9aa;font-weight:400">${fmt(Math.round(r.netto/12))}/md</span></span></div>` +
+    renteRad +
+    (rc.besparelse > 0
+      ? `<div class="mini-row total" style="background:#f5f3ff;border-radius:8px;padding:10px;margin-top:6px">
+          <span class="lbl">💰 Netto inkl. rentefradrag</span>
+          <span class="val" style="color:#7c3aed">${fmt(nettoMedRente)}<br><span style="font-size:0.75rem;color:#9aa;font-weight:400">${fmt(Math.round(nettoMedRente/12))}/md</span></span>
+         </div>` : '');
+}
+
+function renderRente(rc, id) {
+  document.getElementById(id).innerHTML = [
+    {l:'Renteudgifter i alt', v:fmt(rc.renteAar), cls:''},
+    {l:'Fratrukket (fradragsberettiget)', v:fmt(rc.fratrukket), cls:'purple'},
+    ...(rc.afskaret > 0 ? [{l:'Afskåret af loft', v:fmt(rc.afskaret), cls:'orange'}] : []),
+    {l:`Skattebesparelse (~${(rc.sv*100).toFixed(1)}%)`, v:'+'+fmt(rc.besparelse), cls:'green'},
+    ...(rc.tabt > 0 ? [{l:'Tabt skattebesparelse', v:'−'+fmt(rc.tabt), cls:'red'}] : []),
+  ].map(row => `<div class="rente-line"><span class="rl">${row.l}</span><span class="rv ${row.cls}">${row.v}</span></div>`).join('');
+}
+
+function renderBar(r, isNew, barId) {
+  const segs = isNew
+    ? [{v:r.netto,c:'#10b981'},{v:r.am,c:'#f59e0b'},{v:r.bund,c:'#3b82f6'},{v:r.kommune,c:'#64748b'},{v:r.t,c:'#ef4444'},{v:r.tt,c:'#7f1d1d'}]
+    : [{v:r.netto,c:'#10b981'},{v:r.am,c:'#f59e0b'},{v:r.bund,c:'#3b82f6'},{v:r.kommune,c:'#64748b'},{v:r.m,c:'#8b5cf6'},{v:r.t,c:'#ef4444'},{v:r.tt,c:'#7f1d1d'}];
+  document.getElementById(barId).innerHTML = segs.map(s =>
+    `<div class="seg" style="width:${(s.v/r.brutto*100).toFixed(2)}%;background:${s.c}"></div>`
+  ).join('');
+}
+
+// --- HOVED RENDER ---
+function render() {
+  const bruttoMd = parseInt(document.getElementById('salary').value);
+  const renteMd  = parseInt(document.getElementById('rente').value);
+  const brutto   = bruttoMd * 12;
+  const renteAar = renteMd  * 12;
+
+  document.getElementById('salaryVal').textContent = bruttoMd.toLocaleString('da-DK') + ' kr./md';
+  document.getElementById('renteVal').textContent  = renteMd.toLocaleString('da-DK')  + ' kr./md';
+
+  const kom  = getKommune();
+  const kSat = kom.k / 100;
+  document.getElementById('kommuneVal').textContent = `Kommuneskat: ${kom.k.toFixed(2)}%`;
+
+  const loft = RENTE_LOFT * personer;
+  document.getElementById('loftVal').textContent = 'Renteloft: ' + loft.toLocaleString('da-DK') + ' kr.';
+  document.getElementById('loftTxt').textContent = fmt(loft);
+
+  // Beregn
+  const cur = calcCurrent(brutto, kSat);
+  const nw  = calcNew(brutto, kSat);
+  const rCur = calcRente(renteAar, kSat, false);
+  const rNew  = calcRente(renteAar, kSat, true);
+
+  // Opdater subtitles
+  document.getElementById('subCur').textContent =
+    `Bundskat 12,01% · Kommuneskat ${kom.k.toFixed(2)}% · Mellemskat 7,5% (fra 641.200 kr.) · Top-topskat 5%`;
+  document.getElementById('subNew').textContent =
+    `Bundskat 12,01% · Kommuneskat ${kom.k.toFixed(2)}% · Ingen mellemskat · Topskat 15% (fra 777.900 kr.) · Top-topskat 5%`;
+
+  // Render kolonner
+  renderCol(cur, false, 'colCurrent', rCur);
+  renderCol(nw,  true,  'colNew',     rNew);
+  renderRente(rCur, 'renteCur');
+  renderRente(rNew, 'renteNew');
+  renderBar(cur, false, 'barCurrent');
+  renderBar(nw,  true,  'barNew');
+
+  // Advarsel rente
+  const overLoft = Math.max(0, renteAar - loft);
+  document.getElementById('renteWarn').innerHTML = overLoft > 0
+    ? `<div class="warn-box">⚠️ Med det nye regeringsgrundlag afskæres <strong>${fmt(overLoft)}</strong> af dine renteudgifter — du mister en skattebesparelse på <strong>${fmt(rNew.tabt)}/år</strong></div>`
+    : renteAar > 0
+      ? `<div style="margin-top:10px;font-size:0.78rem;color:#059669">✅ Dine renteudgifter er under loftet — fuldt fradrag i begge scenarier</div>`
+      : '';
+
+  // Banner
+  const curTotal = cur.netto + rCur.besparelse;
+  const nwTotal  = nw.netto  + rNew.besparelse;
+  const diff     = nwTotal - curTotal;
+  const lønDiff  = nw.netto - cur.netto;
+  const renteDiff= rNew.besparelse - rCur.besparelse;
+
+  document.getElementById('diffBanner').innerHTML = `
+    <div>
+      <div class="diff-lbl">Samlet forskel (løn + rente)</div>
+      <div class="diff-val ${diff>=0?'save':'pay'}">${fmtDiff(diff)}/år</div>
+      <div class="diff-note">${fmtDiff(Math.round(diff/12))}/md</div>
+    </div>
+    <div class="diff-sep"></div>
+    <div>
+      <div class="diff-lbl">Løn: forskel i netto</div>
+      <div style="font-weight:700;color:${lønDiff>=0?'#10b981':'#ef4444'}">${fmtDiff(lønDiff)}/år</div>
+      <div class="diff-note">${fmtDiff(Math.round(lønDiff/12))}/md</div>
+    </div>
+    <div class="diff-sep"></div>
+    <div>
+      <div class="diff-lbl">Rente: forskel i besparelse</div>
+      <div style="font-weight:700;color:${renteDiff>=0?'#10b981':'#ef4444'}">${fmtDiff(renteDiff)}/år</div>
+      <div class="diff-note">${renteDiff < 0 ? 'Taber pga. renteloft' : 'Ingen forskel'}</div>
+    </div>
+    <div class="diff-sep"></div>
+    <div>
+      <div class="diff-lbl">Skattetryk på løn</div>
+      <div style="font-size:0.92rem"><span style="color:#6b7a90">Nu: </span><b>${pct(cur.total,brutto)}</b> → <b style="color:${lønDiff>=0?'#10b981':'#ef4444'}">${pct(nw.total,brutto)}</b></div>
+      <div class="diff-note">${lønDiff>=0?'Lavere lønskat':'Højere lønskat'} med nye regler</div>
+    </div>`;
+}
+
+document.getElementById('salary').addEventListener('input', render);
+document.getElementById('rente').addEventListener('input', render);
+render();
+</script>
+</body>
+</html>
