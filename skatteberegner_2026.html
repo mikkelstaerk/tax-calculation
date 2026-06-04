@@ -229,21 +229,23 @@ function setPerson(v){
 // --- BEREGNINGER ---
 
 // Gældende 2026:
-// Mellemskat: 7,5% af al indkomst over 641.200 op til 2.592.700 efter AM
-// Top-topskat: 5% af (> 2.592.700) efter AM
-// Der er INGEN separat 15% topskat i gældende regler
+// Mellemskat: 7,5% af (641.200 – 777.900) efter AM
+// Topskat:   15%  af (777.900 – 2.592.700) efter AM
+// Top-topskat: 5%  af (> 2.592.700) efter AM
 function calcCurrent(brutto, kSat) {
   const am = brutto * AM;
   const pi = brutto - am;
   const grundlag = Math.max(0, pi - PFRADRAG);
   const bund = grundlag * BUND;
   const kommune = grundlag * kSat;
-  const mG = pi > G_MELLEM ? Math.min(pi, G_TOPTOP) - G_MELLEM : 0;
-  const ttG= pi > G_TOPTOP ? pi - G_TOPTOP : 0;
-  const m = mG * MELLEM;
-  const tt= ttG * TOPTOP;
-  const total = am + bund + kommune + m + tt;
-  return {brutto, am, pi, grundlag, bund, kommune, kSat, mG, m, ttG, tt, total, netto: brutto - total};
+  const mG  = pi > G_MELLEM   ? Math.min(pi, G_TOP)    - G_MELLEM : 0;
+  const tG  = pi > G_TOP      ? Math.min(pi, G_TOPTOP) - G_TOP    : 0;
+  const ttG = pi > G_TOPTOP   ? pi - G_TOPTOP : 0;
+  const m  = mG  * MELLEM;
+  const t  = tG  * TOP; // topskat 15% i gældende regler
+  const tt = ttG * TOPTOP;
+  const total = am + bund + kommune + m + t + tt;
+  return {brutto, am, pi, grundlag, bund, kommune, kSat, mG, m, tG, t, ttG, tt, total, netto: brutto - total};
 }
 
 // Nyt regeringsgrundlag:
@@ -290,7 +292,8 @@ function renderCol(r, isNew, cid, rc) {
     {l:'AM-bidrag (8%)', v:r.am, cls:'red'},
     {l:'Bundskat (12,01%)', v:r.bund, cls:'red'},
     {l:`Kommuneskat (${(r.kSat*100).toFixed(2)}%)`, v:r.kommune, cls:'red'},
-    {l:'Mellemskat 7,5% (fra 641.200 kr.)', v:r.m, cls:r.mG>0?'red':'', inactive:r.mG===0},
+    {l:'Mellemskat 7,5% (641.200–777.900 kr.)', v:r.m, cls:r.mG>0?'red':'', inactive:r.mG===0},
+    {l:'Topskat 15% (fra 777.900 kr.)', v:r.t, cls:r.tG>0?'red':'', inactive:r.tG===0},
     {l:'Top-topskat 5% (fra 2.592.700 kr.)', v:r.tt, cls:r.ttG>0?'red':'', inactive:r.ttG===0},
   ];
 
@@ -362,7 +365,7 @@ function render() {
 
   // Opdater subtitles
   document.getElementById('subCur').textContent =
-    `Bundskat 12,01% · Kommuneskat ${kom.k.toFixed(2)}% · Mellemskat 7,5% (fra 641.200 kr.) · Top-topskat 5%`;
+    `Bundskat 12,01% · Kommuneskat ${kom.k.toFixed(2)}% · Mellemskat 7,5% (641.200–777.900 kr.) · Topskat 15% (fra 777.900 kr.) · Top-topskat 5%`;
   document.getElementById('subNew').textContent =
     `Bundskat 12,01% · Kommuneskat ${kom.k.toFixed(2)}% · Ingen mellemskat · Topskat 15% (fra 777.900 kr.) · Top-topskat 5%`;
 
